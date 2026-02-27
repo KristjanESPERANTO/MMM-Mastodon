@@ -1,6 +1,6 @@
 {
   "name": "mmm-mastodon",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Bring Mastodon to your MagicMirror²: Display timelines, hashtags, and profiles with media thumbnails, QR codes, and rotating posts.",
   "keywords": [
     "MagicMirror",
