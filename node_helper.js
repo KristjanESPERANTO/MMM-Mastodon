@@ -5,37 +5,44 @@ const fetch = globalThis.fetch;
 
 module.exports = NodeHelper.create({
   start() {
-    this.config = null;
+    this.configs = new Map();
     this.profileCache = new Map();
   },
 
   socketNotificationReceived(notification, payload) {
     if (notification === "MASTODON_CONFIG") {
-      this.config = payload;
+      if (payload?.instanceId && payload.config) {
+        this.configs.set(payload.instanceId, payload.config);
+      }
       return;
     }
 
     if (notification === "MASTODON_REQUEST") {
-      if (!this.config) {
-        this.sendError("Module is not configured yet.");
+      const instanceId = payload?.instanceId;
+      const config = instanceId ? this.configs.get(instanceId) : null;
+      if (!config) {
+        this.sendError(instanceId, "Module is not configured yet.");
         return;
       }
 
-      this.handleRequest(payload).catch((error) => {
-        this.sendError(error.message || "Unknown error.");
+      this.handleRequest(instanceId, config, payload).catch((error) => {
+        this.sendError(instanceId, error.message || "Unknown error.");
       });
     }
   },
 
-  async handleRequest(requestConfig) {
-    const merged = { ...this.config, ...requestConfig };
+  async handleRequest(instanceId, config, requestConfig) {
+    const merged = { ...config, ...requestConfig };
 
     try {
       this.validateConfig(merged);
       const items = await this.fetchFeed(merged);
-      this.sendSocketNotification("MASTODON_RESPONSE", { items });
+      this.sendSocketNotification("MASTODON_RESPONSE", {
+        instanceId,
+        items
+      });
     } catch (error) {
-      this.sendError(error.message || "Failed to load feed.");
+      this.sendError(instanceId, error.message || "Failed to load feed.");
     }
   },
 
@@ -218,8 +225,9 @@ module.exports = NodeHelper.create({
     };
   },
 
-  sendError(message) {
+  sendError(instanceId, message) {
     this.sendSocketNotification("MASTODON_RESPONSE", {
+      instanceId,
       items: [],
       error: message
     });

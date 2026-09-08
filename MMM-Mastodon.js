@@ -1,5 +1,7 @@
 /* global Module */
 
+let nextInstanceId = 0;
+
 Module.register("MMM-Mastodon", {
   defaults: {
     instanceUrl: "",
@@ -20,6 +22,7 @@ Module.register("MMM-Mastodon", {
   },
 
   start() {
+    this.instanceId = `mastodon-${nextInstanceId++}`;
     this.items = [];
     this.error = null;
     this.loaded = false;
@@ -33,7 +36,10 @@ Module.register("MMM-Mastodon", {
       return;
     }
 
-    this.sendSocketNotification("MASTODON_CONFIG", this.config);
+    this.sendSocketNotification("MASTODON_CONFIG", {
+      instanceId: this.instanceId,
+      config: this.config
+    });
     this.scheduleUpdate(0);
   },
 
@@ -50,6 +56,7 @@ Module.register("MMM-Mastodon", {
     this.updateTimer = setTimeout(
       () => {
         this.sendSocketNotification("MASTODON_REQUEST", {
+          instanceId: this.instanceId,
           feedType: this.config.feedType,
           limit: this.config.limit,
           hashtag: this.config.hashtag,
@@ -81,7 +88,10 @@ Module.register("MMM-Mastodon", {
   },
 
   socketNotificationReceived(notification, payload) {
-    if (notification === "MASTODON_RESPONSE") {
+    if (
+      notification === "MASTODON_RESPONSE" &&
+      payload?.instanceId === this.instanceId
+    ) {
       const { items, error } = payload;
       this.error = error || null;
       this.items = Array.isArray(items) ? items : [];
