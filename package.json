@@ -21,6 +21,7 @@
   },
   "type": "commonjs",
   "scripts": {
+    "demo": "cd ../../ && MM_CONFIG_FILE=modules/MMM-Mastodon/demo.config.js node --run start:dev",
     "lint": "eslint && prettier . --check",
     "lint:fix": "eslint --fix && prettier . --write",
     "release": "commit-and-tag-version --config ./changelog.config.js",
